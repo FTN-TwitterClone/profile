@@ -3,6 +3,7 @@ package controller
 import (
 	"github.com/FTN-TwitterClone/profile/service"
 	"go.opentelemetry.io/otel/trace"
+	"net/http"
 )
 
 type ProfileController struct {
@@ -15,6 +16,11 @@ func NewProfileController(tracer trace.Tracer, profileService *service.ProfileSe
 		tracer,
 		profileService,
 	}
+}
+
+func (c *ProfileController) GetUser(w http.ResponseWriter, req *http.Request) {
+	_, span := c.tracer.Start(req.Context(), "AuthController.RegisterUser")
+	defer span.End()
 }
 
 //func (c *AuthController) RegisterUser(w http.ResponseWriter, req *http.Request) {

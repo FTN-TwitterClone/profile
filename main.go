@@ -4,13 +4,17 @@ import (
 	"context"
 	"github.com/FTN-TwitterClone/profile/controller"
 	"github.com/FTN-TwitterClone/profile/controller/jwt"
+	"github.com/FTN-TwitterClone/profile/proto/profile"
 	"github.com/FTN-TwitterClone/profile/repository/mongo"
 	"github.com/FTN-TwitterClone/profile/service"
 	"github.com/FTN-TwitterClone/profile/tracing"
 	"github.com/gorilla/mux"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -52,7 +56,7 @@ func main() {
 		jwt.ExtractJWTUserMiddleware(tracer),
 	)
 
-	//router.HandleFunc("/register/user/", authController.RegisterUser).Methods("POST")
+	router.HandleFunc("/users/{username}/", profileController.GetUser).Methods("POST")
 
 	// start server
 	srv := &http.Server{Addr: "0.0.0.0:8000", Handler: router}
@@ -64,6 +68,21 @@ func main() {
 			}
 		}
 	}()
+
+	lis, err := net.Listen("tcp", "0.0.0.0:9001")
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+
+	var opts []grpc.ServerOption
+	grpcServer := grpc.NewServer(opts...)
+
+	profile.RegisterProfileServiceServer(grpcServer, service.NewgRPCProfileService(tracer, profileRepository))
+	reflection.Register(grpcServer)
+	err = grpcServer.Serve(lis)
+	if err != nil {
+		return
+	}
 
 	<-quit
 
