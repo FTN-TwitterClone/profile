@@ -9,6 +9,7 @@ import (
 	"github.com/FTN-TwitterClone/profile/service"
 	"github.com/FTN-TwitterClone/profile/tracing"
 	"github.com/gorilla/mux"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 	"google.golang.org/grpc"
@@ -37,7 +38,7 @@ func main() {
 	defer func() { _ = tp.Shutdown(ctx) }()
 	otel.SetTracerProvider(tp)
 	// Finally, set the tracer that can be used for this package.
-	tracer := tp.Tracer("auth")
+	tracer := tp.Tracer("profile")
 	otel.SetTextMapPropagator(propagation.TraceContext{})
 
 	profileRepository, err := mongo.NewMongoProfileRepository(tracer)
@@ -74,8 +75,9 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	var opts []grpc.ServerOption
-	grpcServer := grpc.NewServer(opts...)
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
+	)
 
 	profile.RegisterProfileServiceServer(grpcServer, service.NewgRPCProfileService(tracer, profileRepository))
 	reflection.Register(grpcServer)
