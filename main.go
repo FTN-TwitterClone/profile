@@ -7,12 +7,14 @@ import (
 	"github.com/FTN-TwitterClone/profile/proto/profile"
 	"github.com/FTN-TwitterClone/profile/repository/mongo"
 	"github.com/FTN-TwitterClone/profile/service"
+	"github.com/FTN-TwitterClone/profile/tls"
 	"github.com/FTN-TwitterClone/profile/tracing"
 	"github.com/gorilla/mux"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
 	"log"
 	"net"
@@ -75,7 +77,10 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
+	creds := credentials.NewTLS(tls.GetgRPCServerTLSConfig())
+
 	grpcServer := grpc.NewServer(
+		grpc.Creds(creds),
 		grpc.UnaryInterceptor(otelgrpc.UnaryServerInterceptor()),
 	)
 
