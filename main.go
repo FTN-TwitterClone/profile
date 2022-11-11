@@ -60,7 +60,6 @@ func main() {
 	)
 
 	router.HandleFunc("/users/{username}/", profileController.GetUser).Methods("POST")
-
 	// start server
 	srv := &http.Server{Addr: "0.0.0.0:8000", Handler: router}
 	go func() {

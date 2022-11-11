@@ -2,9 +2,12 @@ package service
 
 import (
 	"context"
+	"github.com/FTN-TwitterClone/profile/app_errors"
+	"github.com/FTN-TwitterClone/profile/model"
 	"github.com/FTN-TwitterClone/profile/proto/profile"
 	"github.com/FTN-TwitterClone/profile/repository"
 	"github.com/golang/protobuf/ptypes/empty"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -22,11 +25,22 @@ func NewgRPCProfileService(tracer trace.Tracer, profileRepository repository.Pro
 }
 
 func (s gRPCProfileService) RegisterUser(ctx context.Context, user *profile.User) (*empty.Empty, error) {
-	_, span := s.tracer.Start(ctx, "gRPCProfileService.RegisterUser")
+	serviceCtx, span := s.tracer.Start(ctx, "gRPCProfileService.RegisterUser")
 	defer span.End()
-
-	println("yay")
-
+	u := model.ProfileUser{
+		Username:  user.Username,
+		Email:     user.Email,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Town:      user.Town,
+		Gender:    user.Gender,
+		//Age:	user.Age
+	}
+	err := s.profileRepository.SaveUser(serviceCtx, &u)
+	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
+		return nil, &app_errors.AppError{500, ""}
+	}
 	return new(empty.Empty), nil
 }
 
