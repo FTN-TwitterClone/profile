@@ -3,8 +3,8 @@ package mongo
 import (
 	"context"
 	"fmt"
+	"github.com/FTN-TwitterClone/profile/app_errors"
 	"github.com/FTN-TwitterClone/profile/model"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.opentelemetry.io/otel/codes"
@@ -38,16 +38,27 @@ func NewMongoProfileRepository(tracer trace.Tracer) (*MongoProfileRepository, er
 	return &car, nil
 }
 
-func (r *MongoProfileRepository) SaveUser(ctx context.Context, user *model.ProfileUser) (bool, error) {
+func (r *MongoProfileRepository) SaveUser(ctx context.Context, user *model.User) error {
 	_, span := r.tracer.Start(ctx, "MongoProfileRepository.SaveUser")
 	defer span.End()
+
 	usersCollection := r.cli.Database("twitterCloneDB").Collection("users")
 
-	_, err := usersCollection.InsertOne(ctx, bson.A{user})
+	_, err := usersCollection.InsertOne(ctx, user)
 
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
-		return false, err
+		return err
 	}
-	return true, nil
+
+	return nil
+}
+
+func (r *MongoProfileRepository) GetUser(ctx context.Context, username string) (*model.User, *app_errors.AppError) {
+	_, span := r.tracer.Start(ctx, "MongoProfileRepository.GetUser")
+	defer span.End()
+
+	//TODO: implement
+
+	return nil, nil
 }

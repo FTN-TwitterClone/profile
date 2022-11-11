@@ -59,7 +59,9 @@ func main() {
 		jwt.ExtractJWTUserMiddleware(tracer),
 	)
 
-	router.HandleFunc("/users/{username}/", profileController.GetUser).Methods("POST")
+	router.HandleFunc("/users/{username}/", profileController.GetUser).Methods("GET")
+	router.HandleFunc("/users/me/", profileController.UpdateMyDetails).Methods("PATCH")
+
 	// start server
 	srv := &http.Server{Addr: "0.0.0.0:8000", Handler: router}
 	go func() {

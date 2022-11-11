@@ -14,21 +14,22 @@ type ProfileService struct {
 	profileRepository repository.ProfileRepository
 }
 
-func (s *ProfileService) SaveUser(ctx context.Context, user *model.ProfileUser) (*model.ProfileUser, *app_errors.AppError) {
-	serviceCtx, span := s.tracer.Start(ctx, "ProfileService.SaveUser")
-	defer span.End()
-
-	err := s.profileRepository.SaveUser(serviceCtx, user)
-	if err != nil {
-		span.SetStatus(codes.Error, err.Error())
-		return nil, &app_errors.AppError{500, ""}
-	}
-	return user, nil
-}
-
 func NewProfileService(tracer trace.Tracer, profileRepository repository.ProfileRepository) *ProfileService {
 	return &ProfileService{
 		tracer,
 		profileRepository,
 	}
+}
+
+func (s *ProfileService) GetUser(ctx context.Context, username string) (*model.User, *app_errors.AppError) {
+	serviceCtx, span := s.tracer.Start(ctx, "ProfileService.GetUser")
+	defer span.End()
+
+	user, err := s.profileRepository.GetUser(serviceCtx, username)
+	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
+		return nil, &app_errors.AppError{500, ""}
+	}
+
+	return user, nil
 }
