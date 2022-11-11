@@ -8,6 +8,27 @@ import (
 	"os"
 )
 
+func GetHTTPServerTLSConfig() *tls.Config {
+	var caCert []byte
+	var err error
+	var caCertPool *x509.CertPool
+
+	caCert, err = ioutil.ReadFile(os.Getenv("CA_CERT"))
+	if err != nil {
+		log.Fatal("Error opening cert file", err)
+	}
+
+	caCertPool = x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCert)
+
+	return &tls.Config{
+		ServerName: "auth",
+		ClientAuth: tls.RequireAndVerifyClientCert,
+		ClientCAs:  caCertPool,
+		MinVersion: tls.VersionTLS12, // TLS versions below 1.2 are considered insecure - see https://www.rfc-editor.org/rfc/rfc7525.txt for details
+	}
+}
+
 func GetgRPCServerTLSConfig() *tls.Config {
 	serverCertPath := os.Getenv("CERT")
 	serverKeyPath := os.Getenv("KEY")
