@@ -38,7 +38,7 @@ func (c *ProfileController) GetUser(w http.ResponseWriter, req *http.Request) {
 }
 
 func (c *ProfileController) UpdateMyDetails(w http.ResponseWriter, req *http.Request) {
-	_, span := c.tracer.Start(req.Context(), "ProfileController.UpdateUser")
+	_, span := c.tracer.Start(req.Context(), "ProfileController.UpdateMyDetails")
 	defer span.End()
 
 	//TODO: Only privacy field can be updated
