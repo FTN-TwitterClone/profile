@@ -2,12 +2,12 @@ package controller
 
 import (
 	"github.com/FTN-TwitterClone/profile/controller/json"
+	"github.com/FTN-TwitterClone/profile/model"
 	"github.com/FTN-TwitterClone/profile/service"
 	"github.com/gorilla/mux"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"net/http"
-	"strconv"
 )
 
 type ProfileController struct {
@@ -42,20 +42,17 @@ func (c *ProfileController) UpdateMyDetails(w http.ResponseWriter, req *http.Req
 	ctx, span := c.tracer.Start(req.Context(), "ProfileController.UpdateMyDetails")
 	defer span.End()
 
-	username := mux.Vars(req)["username"]
-
-	user, appErr := c.profileService.GetUser(ctx, username)
+	updateForm, err := json.DecodeJson[model.UpdateProfile](req.Body)
+	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
+		http.Error(w, "Error decoding from form json", 500)
+		return
+	}
+	appErr := c.profileService.UpdateUser(ctx, &updateForm)
 	if appErr != nil {
 		span.SetStatus(codes.Error, appErr.Error())
 		http.Error(w, appErr.Message, appErr.Code)
 		return
 	}
-	changedValue, err := strconv.ParseBool(mux.Vars(req)["private"])
-	if err != nil {
-		span.SetStatus(codes.Error, err.Error())
-		http.Error(w, "Wrong value.", 500)
-		return
-	}
-	user.Private = changedValue
 
 }

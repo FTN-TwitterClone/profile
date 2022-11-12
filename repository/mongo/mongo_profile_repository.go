@@ -64,11 +64,25 @@ func (r *MongoProfileRepository) GetUser(ctx context.Context, username string) (
 
 	var elem *model.User
 
-	err := result.Decode(elem)
+	err := result.Decode(&elem)
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
 		return nil, &app_errors.AppError{500, ""}
 	}
 
 	return elem, nil
+}
+
+func (r *MongoProfileRepository) UpdateUser(ctx context.Context, updateProfile *model.UpdateProfile) error {
+	_, span := r.tracer.Start(ctx, "MongoProfileRepository.UpdateUser")
+	defer span.End()
+
+	usersCollection := r.cli.Database("twitterCloneDB").Collection("users")
+	update := bson.D{{"$set", bson.D{{"private", updateProfile.Private}}}}
+	_, err := usersCollection.UpdateOne(ctx, bson.M{"username": updateProfile.Username}, update)
+	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
+		return err
+	}
+	return nil
 }

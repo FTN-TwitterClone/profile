@@ -33,3 +33,27 @@ func (s *ProfileService) GetUser(ctx context.Context, username string) (*model.U
 
 	return user, nil
 }
+func (s *ProfileService) SaveUser(ctx context.Context, user *model.User) *app_errors.AppError {
+	serviceCtx, span := s.tracer.Start(ctx, "ProfileService.SaveUser")
+	defer span.End()
+
+	err := s.profileRepository.SaveUser(serviceCtx, user)
+	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
+		return &app_errors.AppError{500, "User not saved."}
+	}
+
+	return nil
+}
+
+func (s *ProfileService) UpdateUser(ctx context.Context, user *model.UpdateProfile) *app_errors.AppError {
+	serviceCtx, span := s.tracer.Start(ctx, "ProfileService.UpdateUser")
+	defer span.End()
+
+	err := s.profileRepository.UpdateUser(serviceCtx, user)
+	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
+		return &app_errors.AppError{500, "User not saved."}
+	}
+	return nil
+}
