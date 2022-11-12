@@ -7,6 +7,7 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"net/http"
+	"strconv"
 )
 
 type ProfileController struct {
@@ -38,8 +39,23 @@ func (c *ProfileController) GetUser(w http.ResponseWriter, req *http.Request) {
 }
 
 func (c *ProfileController) UpdateMyDetails(w http.ResponseWriter, req *http.Request) {
-	_, span := c.tracer.Start(req.Context(), "ProfileController.UpdateMyDetails")
+	ctx, span := c.tracer.Start(req.Context(), "ProfileController.UpdateMyDetails")
 	defer span.End()
 
-	//TODO: Only privacy field can be updated
+	username := mux.Vars(req)["username"]
+
+	user, appErr := c.profileService.GetUser(ctx, username)
+	if appErr != nil {
+		span.SetStatus(codes.Error, appErr.Error())
+		http.Error(w, appErr.Message, appErr.Code)
+		return
+	}
+	changedValue, err := strconv.ParseBool(mux.Vars(req)["private"])
+	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
+		http.Error(w, "Wrong value.", 500)
+		return
+	}
+	user.Private = changedValue
+
 }
