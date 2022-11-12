@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/FTN-TwitterClone/profile/app_errors"
 	"github.com/FTN-TwitterClone/profile/model"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.opentelemetry.io/otel/codes"
@@ -58,7 +59,16 @@ func (r *MongoProfileRepository) GetUser(ctx context.Context, username string) (
 	_, span := r.tracer.Start(ctx, "MongoProfileRepository.GetUser")
 	defer span.End()
 
-	//TODO: implement
+	usersCollection := r.cli.Database("twitterCloneDB").Collection("users")
+	result := usersCollection.FindOne(ctx, bson.M{"username": username})
 
-	return nil, nil
+	var elem *model.User
+
+	err := result.Decode(elem)
+	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
+		return nil, &app_errors.AppError{500, ""}
+	}
+
+	return elem, nil
 }
