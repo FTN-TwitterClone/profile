@@ -9,6 +9,7 @@ import (
 	"github.com/FTN-TwitterClone/profile/service"
 	"github.com/FTN-TwitterClone/profile/tls"
 	"github.com/FTN-TwitterClone/profile/tracing"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
@@ -59,13 +60,27 @@ func main() {
 		jwt.ExtractJWTUserMiddleware(tracer),
 	)
 
-	router.HandleFunc("/users/{username}/", profileController.GetUser).Methods("POST")
+	router.HandleFunc("/users/{username}/", profileController.GetUser).Methods("GET")
+	router.HandleFunc("/users/me/", profileController.UpdateMyDetails).Methods("PATCH")
+
+	allowedHeaders := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
+	allowedMethods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD", "OPTIONS"})
+	allowedOrigins := handlers.AllowedOrigins([]string{"*"})
 
 	// start server
-	srv := &http.Server{Addr: "0.0.0.0:8000", Handler: router}
+	srv := &http.Server{
+		Addr:      "0.0.0.0:8000",
+		Handler:   handlers.CORS(allowedHeaders, allowedMethods, allowedOrigins)(router),
+		TLSConfig: tls.GetHTTPServerTLSConfig(),
+	}
+
 	go func() {
 		log.Println("server starting")
-		if err := srv.ListenAndServe(); err != nil {
+
+		certFile := os.Getenv("CERT")
+		keyFile := os.Getenv("KEY")
+
+		if err := srv.ListenAndServeTLS(certFile, keyFile); err != nil {
 			if err != http.ErrServerClosed {
 				log.Fatal(err)
 			}
