@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/FTN-TwitterClone/profile/controller"
 	"github.com/FTN-TwitterClone/profile/controller/jwt"
-	"github.com/FTN-TwitterClone/profile/proto/profile"
 	"github.com/FTN-TwitterClone/profile/repository/mongo"
 	"github.com/FTN-TwitterClone/profile/service"
 	"github.com/FTN-TwitterClone/profile/tls"
