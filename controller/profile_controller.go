@@ -56,3 +56,18 @@ func (c *ProfileController) UpdateMyDetails(w http.ResponseWriter, req *http.Req
 	}
 
 }
+
+func (c *ProfileController) GetPrivacy(w http.ResponseWriter, req *http.Request) {
+	ctx, span := c.tracer.Start(req.Context(), "ProfileController.GetPrivacy")
+	defer span.End()
+	username := mux.Vars(req)["username"]
+
+	user, appErr := c.profileService.GetUser(ctx, username)
+	if appErr != nil {
+		span.SetStatus(codes.Error, appErr.Error())
+		http.Error(w, appErr.Message, appErr.Code)
+		return
+	}
+
+	json.EncodeJson(w, user.Private)
+}
