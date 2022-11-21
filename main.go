@@ -62,6 +62,7 @@ func main() {
 
 	router.HandleFunc("/users/{username}/", profileController.GetUser).Methods("GET")
 	router.HandleFunc("/users/me/", profileController.UpdateMyDetails).Methods("PATCH")
+	router.HandleFunc("/users/{username}/privacy", profileController.GetPrivacy).Methods("GET")
 
 	allowedHeaders := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
 	allowedMethods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "PATCH", "HEAD", "OPTIONS"})
