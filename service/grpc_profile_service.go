@@ -2,12 +2,12 @@ package service
 
 import (
 	"context"
+	"github.com/FTN-TwitterClone/grpc-stubs/profile"
 	"github.com/FTN-TwitterClone/profile/model"
 	"github.com/FTN-TwitterClone/profile/repository"
 	"github.com/golang/protobuf/ptypes/empty"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
-	"grpc-stubs/profile"
 )
 
 type gRPCProfileService struct {
