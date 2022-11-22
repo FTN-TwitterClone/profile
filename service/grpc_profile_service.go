@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"github.com/FTN-TwitterClone/grpc-stubs/profile"
+	"github.com/FTN-TwitterClone/grpc-stubs/proto/profile"
 	"github.com/FTN-TwitterClone/profile/model"
 	"github.com/FTN-TwitterClone/profile/repository"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -23,7 +23,7 @@ func NewgRPCProfileService(tracer trace.Tracer, profileRepository repository.Pro
 	}
 }
 
-func (s gRPCProfileService) RegisterUser(ctx context.Context, user *profile.User) (*empty.Empty, error) {
+func (s gRPCProfileService) RegisterUser(ctx context.Context, user *profile.ProfileUser) (*empty.Empty, error) {
 	serviceCtx, span := s.tracer.Start(ctx, "gRPCProfileService.RegisterUser")
 	defer span.End()
 
@@ -47,7 +47,7 @@ func (s gRPCProfileService) RegisterUser(ctx context.Context, user *profile.User
 	return new(empty.Empty), nil
 }
 
-func (s gRPCProfileService) RegisterBusinessUser(ctx context.Context, user *profile.BusinessUser) (*empty.Empty, error) {
+func (s gRPCProfileService) RegisterBusinessUser(ctx context.Context, user *profile.ProfileBusinessUser) (*empty.Empty, error) {
 	serviceCtx, span := s.tracer.Start(ctx, "gRPCProfileService.RegisterBusinessUser")
 	defer span.End()
 
