@@ -9,5 +9,5 @@ import (
 type ProfileRepository interface {
 	SaveUser(ctx context.Context, user *model.User) error
 	GetUser(ctx context.Context, username string) (*model.User, *app_errors.AppError)
-	UpdateUser(ctx context.Context, user *model.UpdateProfile) error
+	UpdateUser(ctx context.Context, userForm *model.UpdateProfile, authUser *model.AuthUser) error
 }

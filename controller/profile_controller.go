@@ -48,7 +48,10 @@ func (c *ProfileController) UpdateMyDetails(w http.ResponseWriter, req *http.Req
 		http.Error(w, "Error decoding from form json", 500)
 		return
 	}
-	appErr := c.profileService.UpdateUser(ctx, &updateForm)
+
+	authUser := ctx.Value("authUser").(model.AuthUser)
+
+	appErr := c.profileService.UpdateUser(ctx, &updateForm, &authUser)
 	if appErr != nil {
 		span.SetStatus(codes.Error, appErr.Error())
 		http.Error(w, appErr.Message, appErr.Code)

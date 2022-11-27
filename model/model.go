@@ -23,6 +23,5 @@ type User struct {
 	Private     bool   `json:"private" bson:"private"`
 }
 type UpdateProfile struct {
-	Username string `json:"username,omitempty" bson:"username,omitempty"`
 	Private  bool   `json:"private" bson:"private"`
 }

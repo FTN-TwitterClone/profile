@@ -73,13 +73,13 @@ func (r *MongoProfileRepository) GetUser(ctx context.Context, username string) (
 	return elem, nil
 }
 
-func (r *MongoProfileRepository) UpdateUser(ctx context.Context, updateProfile *model.UpdateProfile) error {
+func (r *MongoProfileRepository) UpdateUser(ctx context.Context, userForm *model.UpdateProfile, authUser *model.AuthUser) error {
 	_, span := r.tracer.Start(ctx, "MongoProfileRepository.UpdateUser")
 	defer span.End()
 
 	usersCollection := r.cli.Database("twitterCloneDB").Collection("users")
-	update := bson.D{{"$set", bson.D{{"private", updateProfile.Private}}}}
-	_, err := usersCollection.UpdateOne(ctx, bson.M{"username": updateProfile.Username}, update)
+	update := bson.D{{"$set", bson.D{{"private", userForm.Private}}}}
+	_, err := usersCollection.UpdateOne(ctx, bson.M{"username": authUser.Username}, update)
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
 		return err
