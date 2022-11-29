@@ -1,12 +1,19 @@
 package service
 
 import (
+	"github.com/FTN-TwitterClone/grpc-stubs/proto/social_graph"
 	"github.com/FTN-TwitterClone/profile/app_errors"
 	"github.com/FTN-TwitterClone/profile/model"
 	"github.com/FTN-TwitterClone/profile/repository"
+	"github.com/FTN-TwitterClone/profile/tls"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/metadata"
+	"log"
 )
 
 type ProfileService struct {
@@ -55,5 +62,43 @@ func (s *ProfileService) UpdateUser(ctx context.Context, userForm *model.UpdateP
 		span.SetStatus(codes.Error, err.Error())
 		return &app_errors.AppError{500, "User not saved."}
 	}
+
+	conn, err := getgRPCConnection("social-graph:9001")
+	defer conn.Close()
+	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
+		return &app_errors.AppError{500, ""}
+	}
+
+	privacy := social_graph.SocialGraphUpdatedUser{
+		Private: userForm.Private,
+	}
+
+	socialGraphService := social_graph.NewSocialGraphServiceClient(conn)
+	serviceCtx = metadata.AppendToOutgoingContext(serviceCtx, "authUsername", authUser.Username)
+
+	_, err = socialGraphService.SocialGraphUpdateUser(serviceCtx, &privacy)
+	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
+		return &app_errors.AppError{500, ""}
+	}
+
 	return nil
+}
+
+func getgRPCConnection(address string) (*grpc.ClientConn, error) {
+	creds := credentials.NewTLS(tls.GetgRPCClientTLSConfig())
+
+	conn, err := grpc.DialContext(
+		context.Background(),
+		address,
+		grpc.WithTransportCredentials(creds),
+		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor()),
+	)
+
+	if err != nil {
+		log.Fatalf("Failed to start gRPC connection: %v", err)
+	}
+
+	return conn, err
 }
