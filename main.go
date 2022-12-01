@@ -6,6 +6,7 @@ import (
 	"github.com/FTN-TwitterClone/profile/controller"
 	"github.com/FTN-TwitterClone/profile/controller/jwt"
 	"github.com/FTN-TwitterClone/profile/repository/mongo"
+	"github.com/FTN-TwitterClone/profile/saga"
 	"github.com/FTN-TwitterClone/profile/service"
 	"github.com/FTN-TwitterClone/profile/tls"
 	"github.com/FTN-TwitterClone/profile/tracing"
@@ -45,6 +46,11 @@ func main() {
 	otel.SetTextMapPropagator(propagation.TraceContext{})
 
 	profileRepository, err := mongo.NewMongoProfileRepository(tracer)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = saga.NewRegisterUserHandler(profileRepository)
 	if err != nil {
 		log.Fatal(err)
 	}
