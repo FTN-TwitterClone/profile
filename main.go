@@ -50,7 +50,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	_, err = saga.NewRegisterUserHandler(profileRepository)
+	_, err = saga.NewRegisterUserHandler(tracer, profileRepository)
 	if err != nil {
 		log.Fatal(err)
 	}

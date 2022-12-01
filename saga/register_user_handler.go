@@ -1,18 +1,25 @@
 package saga
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/FTN-TwitterClone/profile/repository"
+	"github.com/FTN-TwitterClone/profile/tracing"
 	"github.com/nats-io/nats.go"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/net/context"
 	"os"
 )
 
 type RegisterUserHandler struct {
-	conn              *nats.EncodedConn
+	tracer            trace.Tracer
+	conn              *nats.Conn
 	profileRepository repository.ProfileRepository
 }
 
-func NewRegisterUserHandler(profileRepository repository.ProfileRepository) (*RegisterUserHandler, error) {
+func NewRegisterUserHandler(tracer trace.Tracer, profileRepository repository.ProfileRepository) (*RegisterUserHandler, error) {
 	natsHost := os.Getenv("NATS_HOST")
 	natsPort := os.Getenv("NATS_PORT")
 
@@ -23,17 +30,13 @@ func NewRegisterUserHandler(profileRepository repository.ProfileRepository) (*Re
 		return nil, err
 	}
 
-	encConn, err := nats.NewEncodedConn(connection, nats.JSON_ENCODER)
-	if err != nil {
-		return nil, err
-	}
-
 	h := &RegisterUserHandler{
-		conn:              encConn,
+		tracer:            tracer,
+		conn:              connection,
 		profileRepository: profileRepository,
 	}
 
-	_, err = encConn.Subscribe(REGISTER_COMMAND, h.handleCommand)
+	_, err = connection.Subscribe(REGISTER_COMMAND, h.handleCommand)
 	if err != nil {
 		return nil, err
 	}
@@ -41,19 +44,37 @@ func NewRegisterUserHandler(profileRepository repository.ProfileRepository) (*Re
 	return h, nil
 }
 
-func (h RegisterUserHandler) handleCommand(c RegisterUserCommand) {
+func (h RegisterUserHandler) handleCommand(msg *nats.Msg) {
+	remoteCtx, err := tracing.GetNATSParentContext(msg)
+	if err != nil {
+
+	}
+
+	ctx, span := otel.Tracer("profile").Start(trace.ContextWithRemoteSpanContext(context.Background(), remoteCtx), msg.Subject)
+	defer span.End()
+
+	var c RegisterUserCommand
+
+	err = json.Unmarshal(msg.Data, &c)
+	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
+		return
+	}
+
 	switch c.Command {
 	case SaveProfile:
-		h.handleSaveProfile(c.User)
+		h.handleSaveProfile(ctx, c.User)
 	case RollbackProfile:
-		h.handleRollbackProfile(c.User)
+		h.handleRollbackProfile(ctx, c.User)
 	}
 }
 
-func (h RegisterUserHandler) handleSaveProfile(user NewUser) {
-
+func (h RegisterUserHandler) handleSaveProfile(ctx context.Context, user NewUser) {
+	_, span := h.tracer.Start(ctx, "RegisterUserHandler.handleSaveProfile")
+	defer span.End()
 }
 
-func (h RegisterUserHandler) handleRollbackProfile(user NewUser) {
-
+func (h RegisterUserHandler) handleRollbackProfile(ctx context.Context, user NewUser) {
+	_, span := h.tracer.Start(ctx, "RegisterUserHandler.handleRollbackProfile")
+	defer span.End()
 }
