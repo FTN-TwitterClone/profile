@@ -3,6 +3,7 @@ package saga
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/FTN-TwitterClone/profile/model"
 	"github.com/FTN-TwitterClone/profile/repository"
 	"github.com/FTN-TwitterClone/profile/tracing"
 	"github.com/nats-io/nats.go"
@@ -73,24 +74,60 @@ func (h RegisterUserHandler) handleSaveProfile(ctx context.Context, user NewUser
 	handlerCtx, span := h.tracer.Start(ctx, "RegisterUserHandler.handleSaveProfile")
 	defer span.End()
 
-	r := RegisterUserReply{
-		Reply: ProfileSuccess,
-		User:  user,
+	var u model.User
+
+	if user.Role == "ROLE_USER" {
+		u = model.User{
+			Username:  user.Username,
+			Email:     user.Email,
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
+			Town:      user.Town,
+			Gender:    user.Gender,
+			Private:   true,
+		}
+	} else {
+		u = model.User{
+			Username:    user.Username,
+			Email:       user.Email,
+			CompanyName: user.CompanyName,
+			Website:     user.Website,
+			Private:     false,
+		}
 	}
 
-	h.sendReply(handlerCtx, r)
+	err := h.profileRepository.SaveUser(handlerCtx, &u)
+	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
+
+		h.sendReply(handlerCtx, RegisterUserReply{
+			Reply: ProfileFail,
+			User:  user,
+		})
+
+		return
+	}
+
+	h.sendReply(handlerCtx, RegisterUserReply{
+		Reply: ProfileSuccess,
+		User:  user,
+	})
 }
 
 func (h RegisterUserHandler) handleRollbackProfile(ctx context.Context, user NewUser) {
 	handlerCtx, span := h.tracer.Start(ctx, "RegisterUserHandler.handleRollbackProfile")
 	defer span.End()
 
-	r := RegisterUserReply{
-		Reply: ProfileRollback,
-		User:  user,
+	err := h.profileRepository.DeleteUser(handlerCtx, user.Username)
+	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
+		return
 	}
 
-	h.sendReply(handlerCtx, r)
+	h.sendReply(handlerCtx, RegisterUserReply{
+		Reply: ProfileRollback,
+		User:  user,
+	})
 }
 
 func (h RegisterUserHandler) sendReply(ctx context.Context, r RegisterUserReply) {
