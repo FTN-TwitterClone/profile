@@ -50,7 +50,7 @@ func (h RegisterUserHandler) handleCommand(msg *nats.Msg) {
 
 	}
 
-	ctx, span := otel.Tracer("profile").Start(trace.ContextWithRemoteSpanContext(context.Background(), remoteCtx), msg.Subject)
+	ctx, span := otel.Tracer("profile").Start(trace.ContextWithRemoteSpanContext(context.Background(), remoteCtx), "RegisterUserHandler.handleCommand")
 	defer span.End()
 
 	var c RegisterUserCommand
@@ -70,11 +70,51 @@ func (h RegisterUserHandler) handleCommand(msg *nats.Msg) {
 }
 
 func (h RegisterUserHandler) handleSaveProfile(ctx context.Context, user NewUser) {
-	_, span := h.tracer.Start(ctx, "RegisterUserHandler.handleSaveProfile")
+	handlerCtx, span := h.tracer.Start(ctx, "RegisterUserHandler.handleSaveProfile")
 	defer span.End()
+
+	r := RegisterUserReply{
+		Reply: ProfileSuccess,
+		User:  user,
+	}
+
+	h.sendReply(handlerCtx, r)
 }
 
 func (h RegisterUserHandler) handleRollbackProfile(ctx context.Context, user NewUser) {
-	_, span := h.tracer.Start(ctx, "RegisterUserHandler.handleRollbackProfile")
+	handlerCtx, span := h.tracer.Start(ctx, "RegisterUserHandler.handleRollbackProfile")
 	defer span.End()
+
+	r := RegisterUserReply{
+		Reply: ProfileRollback,
+		User:  user,
+	}
+
+	h.sendReply(handlerCtx, r)
+}
+
+func (h RegisterUserHandler) sendReply(ctx context.Context, r RegisterUserReply) {
+	_, span := h.tracer.Start(ctx, "RegisterUserHandler.sendReply")
+	defer span.End()
+
+	headers := nats.Header{}
+	headers.Set(tracing.TRACE_ID, span.SpanContext().TraceID().String())
+	headers.Set(tracing.SPAN_ID, span.SpanContext().SpanID().String())
+
+	data, err := json.Marshal(r)
+	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
+		return
+	}
+
+	msg := nats.Msg{
+		Subject: REGISTER_REPLY,
+		Header:  headers,
+		Data:    data,
+	}
+
+	err = h.conn.PublishMsg(&msg)
+	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
+	}
 }
