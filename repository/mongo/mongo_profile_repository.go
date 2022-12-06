@@ -3,7 +3,6 @@ package mongo
 import (
 	"context"
 	"fmt"
-	"github.com/FTN-TwitterClone/profile/app_errors"
 	"github.com/FTN-TwitterClone/profile/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -55,7 +54,7 @@ func (r *MongoProfileRepository) SaveUser(ctx context.Context, user *model.User)
 	return nil
 }
 
-func (r *MongoProfileRepository) GetUser(ctx context.Context, username string) (*model.User, *app_errors.AppError) {
+func (r *MongoProfileRepository) GetUser(ctx context.Context, username string) (*model.User, error) {
 	_, span := r.tracer.Start(ctx, "MongoProfileRepository.GetUser")
 	defer span.End()
 
@@ -67,7 +66,7 @@ func (r *MongoProfileRepository) GetUser(ctx context.Context, username string) (
 	err := result.Decode(&elem)
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
-		return nil, &app_errors.AppError{500, ""}
+		return nil, err
 	}
 
 	return elem, nil
@@ -84,5 +83,20 @@ func (r *MongoProfileRepository) UpdateUser(ctx context.Context, userForm *model
 		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
+	return nil
+}
+
+func (r *MongoProfileRepository) DeleteUser(ctx context.Context, username string) error {
+	_, span := r.tracer.Start(ctx, "MongoProfileRepository.DeleteUser")
+	defer span.End()
+
+	usersCollection := r.cli.Database("twitterCloneDB").Collection("users")
+	_, err := usersCollection.DeleteOne(ctx, bson.M{"username": username})
+
+	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
+		return err
+	}
+
 	return nil
 }
