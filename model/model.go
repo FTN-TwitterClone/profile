@@ -20,8 +20,9 @@ type User struct {
 	Gender      string `json:"gender,omitempty" bson:"gender,omitempty"`
 	Website     string `json:"website,omitempty" bson:"website,omitempty"`
 	CompanyName string `json:"companyName,omitempty" bson:"companyName,omitempty"`
+	YearOfBirth int32  `json:"yearOfBirth,omitempty" bson:"yearOfBirth,omitempty"`
 	Private     bool   `json:"private" bson:"private"`
 }
 type UpdateProfile struct {
-	Private  bool   `json:"private" bson:"private"`
+	Private bool `json:"private" bson:"private"`
 }

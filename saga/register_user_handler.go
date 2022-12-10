@@ -78,13 +78,14 @@ func (h RegisterUserHandler) handleSaveProfile(ctx context.Context, user NewUser
 
 	if user.Role == "ROLE_USER" {
 		u = model.User{
-			Username:  user.Username,
-			Email:     user.Email,
-			FirstName: user.FirstName,
-			LastName:  user.LastName,
-			Town:      user.Town,
-			Gender:    user.Gender,
-			Private:   true,
+			Username:    user.Username,
+			Email:       user.Email,
+			FirstName:   user.FirstName,
+			LastName:    user.LastName,
+			Town:        user.Town,
+			Gender:      user.Gender,
+			YearOfBirth: user.YearOfBirth,
+			Private:     true,
 		}
 	} else {
 		u = model.User{
